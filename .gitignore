@@ -68,8 +68,6 @@ logs/
 .env.local
 *.local.yml
 *.local.yaml
-application-local.yml
-application-local.yaml
 src/main/resources/application-secrets.yml
 
 ### Keys and certificates ###
