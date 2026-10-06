@@ -99,3 +99,7 @@ docker-compose.override.yml
 ### Load testing output ###
 k6-results/
 *.k6.json
+
+### Others ###
+claude
+.env

@@ -8,6 +8,34 @@ This is a **portfolio project built to be read by recruiters and interviewers**,
 every decision should be defensible out loud, and the README is a first-class
 deliverable rather than an afterthought.
 
+## How to work with me (read this first)
+
+This is my first large Spring Boot project. **I am the one writing the code.** Your job
+is to teach, not to deliver. This overrides any default instinct to just do the work.
+
+- **Do not edit, create or delete files in this repo unless I explicitly ask.** Reading,
+  searching and running read-only commands are fine. If a change is needed, show me the
+  code in a chat code block with its target file path and let me type it.
+- **Explain the why before the what.** For each step: what problem it solves, why this
+  approach over the obvious alternative, and what would break without it. A reviewer may
+  ask me "why did you do it this way?" — I should be able to answer without notes.
+- **Teach in small steps.** One concept at a time, smallest working thing first. Pause and
+  let me type it and run it before moving on. Don't dump a whole phase at once.
+- **Show the code, fully.** No `// ...` placeholders in the parts I need to type, and don't
+  make me guess imports, annotations or file locations.
+- **Name the terms.** When something has a real name — pessimistic locking, transactional
+  outbox, idempotency key, `@Transactional` propagation — say the name, then explain it in
+  plain language. Vocabulary is part of the deliverable.
+- **Check my understanding.** After a non-trivial concept, ask me a short question or have
+  me predict what a test will do. Tell me plainly when I'm wrong, and why.
+- **Let me fail usefully.** When a test is supposed to fail first (see the concurrency
+  test), make me run it and read the failure before we fix it.
+- **Don't run ahead.** If you spot a problem three steps out, say so in one line and park
+  it; don't redesign silently.
+
+When I ask to "just do it" or explicitly ask you to write a file, go ahead — but say in one
+line what you changed and why.
+
 ## The one invariant
 
 **A seat is never sold twice.** Everything else — services, Kafka, the waiting room —
@@ -16,10 +44,10 @@ correctness and write down why.
 
 ## Stack
 
-- Java 25 (LTS), Spring Boot 4.0.x
+- Java 25 (LTS), Spring Boot 4.x
 - Maven, multi-module, via the Maven wrapper (`./mvnw` — no system Maven installed)
-- PostgreSQL 16 + Flyway migrations
-- Redis 7 (seat holds, waiting-room queue, rate limiting)
+- PostgreSQL 18 + Flyway migrations
+- Redis 8 (seat holds, waiting-room queue, rate limiting)
 - Kafka (KRaft mode, no Zookeeper)
 - Spring Security with asymmetric JWT (RS256) + JWKS
 - Resilience4j (circuit breakers, retries)
@@ -58,7 +86,7 @@ Zuul are legacy, and a reviewer reading them assumes outdated training:
 
 | Module | Responsibility |
 |---|---|
-| `identity-service` | Register/login, BCrypt passwords, mints RS256 JWTs, exposes JWKS, refresh tokens |
+| `user-service` | Register/login, BCrypt passwords, mints RS256 JWTs, exposes JWKS, refresh tokens |
 | `ticket-service` | Events, seats, reservations. **The concurrency core — the most important module** |
 | `order-service` | Orders, payment orchestration, saga + compensation |
 | `waiting-room-service` | Redis-backed queue admission, SSE position stream |
@@ -75,7 +103,7 @@ call couples two services' availability together (uptime multiplies). The write 
 — reserve, pay, issue ticket — goes through events. Synchronous calls are only for
 reads that need an answer within the request (e.g. seat availability for a page load).
 
-**Each service validates JWTs locally** against `identity-service`'s JWKS endpoint. No
+**Each service validates JWTs locally** against `user-service`'s JWKS endpoint. No
 network call per request to an auth server. Only `identity-service` holds the private
 key and can mint tokens; everyone else verifies with the public key.
 
@@ -190,8 +218,3 @@ payment providers, email/SMS delivery, admin UI beyond the bare minimum.
     ./mvnw clean verify            # full build with tests
     ./mvnw spotless:apply          # format to Google Java Style
     ./mvnw -pl ticket-service test # single module's tests
-
-## Tooling
-
-IntelliJ IDEA Community Edition for Java. Spring-specific navigation is Ultimate-only,
-which is tolerable. VS Code only for the optional React waiting-room page.
