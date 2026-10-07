@@ -1,7 +1,7 @@
 package com.matchday.user.exception;
 
 public class EmailAlreadyUsedException extends RuntimeException {
-    public EmailAlreadyUsedException() {
-        super();
-    }
+  public EmailAlreadyUsedException() {
+    super();
+  }
 }
