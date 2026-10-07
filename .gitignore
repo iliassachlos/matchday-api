@@ -101,3 +101,4 @@ k6-results/
 ### Others ###
 claude
 .env
+CLAUDE.md
