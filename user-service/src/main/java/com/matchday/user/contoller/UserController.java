@@ -7,12 +7,18 @@ import com.matchday.user.dto.UserResponse;
 import com.matchday.user.service.UserService;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -29,10 +35,17 @@ public class UserController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request){
+  public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
     TokenResponse tokenResponse = userService.login(request);
 
     return ResponseEntity.ok(tokenResponse);
   }
-  
+
+  @GetMapping("/me")
+  public UserResponse getUserById(@AuthenticationPrincipal Jwt jwt) {
+    UUID userId = UUID.fromString(jwt.getSubject());
+
+    return userService.getById(userId);
+  }
+
 }

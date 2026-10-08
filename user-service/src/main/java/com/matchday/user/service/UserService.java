@@ -7,9 +7,12 @@ import com.matchday.user.dto.UserResponse;
 import com.matchday.user.entity.User;
 import com.matchday.user.exception.EmailAlreadyUsedException;
 import com.matchday.user.exception.InvalidCredentialsException;
+import com.matchday.user.exception.UserNotFoundException;
 import com.matchday.user.mapper.UserMapper;
 import com.matchday.user.repository.UserRepository;
 import java.util.Locale;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -51,5 +54,11 @@ public class UserService {
 
     return new TokenResponse(tokenService.mintAccessToken(user), "Bearer", tokenService.accessTokenTtlSeconds());
   }
+
+  // Get user by ID
+  public UserResponse getById(UUID id) {
+    User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+
+    return userMapper.toResponse(user);
+  }
 }
- 
