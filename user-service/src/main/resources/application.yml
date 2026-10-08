@@ -28,3 +28,7 @@ management:
     endpoint:
         health:
             show-details: always
+
+jwt:
+  private-key: ${JWT_PRIVATE_KEY:classpath:keys/jwt-private.pem}
+  public-key: ${JWT_PUBLIC_KEY:classpath:keys/jwt-public.pem}

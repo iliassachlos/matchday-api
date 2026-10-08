@@ -15,8 +15,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(EmailAlreadyUsedException.class)
   ProblemDetail handleEmailAlreadyUsed(EmailAlreadyUsedException exception) {
-    ProblemDetail problemDetail =
-        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
 
     problemDetail.setTitle("Email already registered");
 
@@ -26,8 +25,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   ProblemDetail handleValidation(MethodArgumentNotValidException exception) {
     Map<String, String> fieldErrors = new LinkedHashMap<>();
-    ProblemDetail problemDetail =
-        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Request validation failed");
 
     problemDetail.setTitle("Invalid request");
     problemDetail.setType(URI.create("https://matchday.dev/errors/validation"));
@@ -42,10 +40,18 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(DataIntegrityViolationException.class)
   ProblemDetail handleDataIntegrity(DataIntegrityViolationException exception) {
-    ProblemDetail problemDetail =
-        ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Resource already exists");
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Resource already exists");
 
     problemDetail.setTitle("Conflict");
+
+    return problemDetail;
+  }
+
+  @ExceptionHandler(InvalidCredentialsException.class)
+  ProblemDetail handleInvalidCredentials(InvalidCredentialsException exception) {
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+
+    problemDetail.setTitle("Authentication failed");
 
     return problemDetail;
   }

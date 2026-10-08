@@ -98,6 +98,9 @@ docker-compose.override.yml
 k6-results/
 *.k6.json
 
+# RSA keys for JWT signing — never commit
+**/src/main/resources/keys/
+
 ### Others ###
 claude
 .env

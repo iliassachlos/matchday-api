@@ -1,6 +1,8 @@
 package com.matchday.user.contoller;
 
+import com.matchday.user.dto.LoginRequest;
 import com.matchday.user.dto.RegisterRequest;
+import com.matchday.user.dto.TokenResponse;
 import com.matchday.user.dto.UserResponse;
 import com.matchday.user.service.UserService;
 import jakarta.validation.Valid;
@@ -25,4 +27,12 @@ public class UserController {
 
     return ResponseEntity.created(URI.create("/api/v1/users/" + user.id())).body(user);
   }
+
+  @PostMapping("/login")
+  public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request){
+    TokenResponse tokenResponse = userService.login(request);
+
+    return ResponseEntity.ok(tokenResponse);
+  }
+  
 }

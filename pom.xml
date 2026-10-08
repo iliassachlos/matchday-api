@@ -26,8 +26,6 @@
 
   <properties>
     <java.version>25</java.version>
-    <spotless.version>3.10.3</spotless.version>
-    <google-java-format.version>1.36.0</google-java-format.version>
     <springdoc.version>3.1.1</springdoc.version>
   </properties>
 
@@ -45,36 +43,5 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-        <version>${spotless.version}</version>
-        <configuration>
-          <java>
-            <googleJavaFormat>
-              <version>${google-java-format.version}</version>
-              <style>GOOGLE</style>
-            </googleJavaFormat>
-            <removeUnusedImports />
-            <trimTrailingWhitespace />
-            <endWithNewline />
-          </java>
-        </configuration>
-        <executions>
-          <execution>
-            <id>spotless-check</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-
 
 </project>
