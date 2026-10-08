@@ -10,6 +10,8 @@ import com.matchday.user.exception.InvalidCredentialsException;
 import com.matchday.user.exception.UserNotFoundException;
 import com.matchday.user.mapper.UserMapper;
 import com.matchday.user.repository.UserRepository;
+
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -60,5 +62,11 @@ public class UserService {
     User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
 
     return userMapper.toResponse(user);
+  }
+
+  public List<UserResponse> getAll() {
+    List<User> users = userRepository.findAll();
+
+    return users.stream().map(userMapper::toResponse).toList();
   }
 }

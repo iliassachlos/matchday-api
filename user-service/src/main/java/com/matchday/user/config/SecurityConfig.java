@@ -35,7 +35,7 @@ public class SecurityConfig {
         .build();
   }
 
-  @Bean 
+  @Bean
   JwtDecoder jwtDecoder(RsaKeyProperties keys) {
     return NimbusJwtDecoder.withPublicKey(keys.publicKey()).build();
   }
@@ -68,9 +68,11 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers("/actuator/health")
                 .permitAll()
+                .requestMatchers("/api/v1/admin/**")
+                .hasRole("ADMIN")
                 .anyRequest()
                 .authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
         .build();
   }
 }

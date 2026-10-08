@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TokenService {
-    private static final Duration ACCESS_TOKEN_TTL = Duration.ofMinutes(15);
+    private static final Duration ACCESS_TOKEN_TTL = Duration.ofHours(1);
     private static final String ISSUER = "matchday-user-service";
 
     private final JwtEncoder jwtEncoder;
