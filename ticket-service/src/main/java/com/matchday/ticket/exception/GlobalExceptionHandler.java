@@ -2,6 +2,7 @@ package com.matchday.ticket.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -20,6 +21,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SeatNotAvailableException.class)
     ProblemDetail handleSeatNotAvailable(SeatNotAvailableException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+
+        problem.setTitle("Seat not available");
+
+        return problem;
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    ProblemDetail handleOptimisticLockFailure(ObjectOptimisticLockingFailureException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, "Seat was taken by someone else");
 
         problem.setTitle("Seat not available");
 
