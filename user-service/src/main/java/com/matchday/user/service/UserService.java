@@ -8,7 +8,7 @@ import com.matchday.user.entity.User;
 import com.matchday.user.exception.EmailAlreadyUsedException;
 import com.matchday.user.exception.InvalidCredentialsException;
 import com.matchday.user.exception.UserNotFoundException;
-import com.matchday.user.mapper.UserMapper;
+
 import com.matchday.user.repository.UserRepository;
 
 import java.util.List;
@@ -29,8 +29,6 @@ public class UserService {
 
   private final PasswordEncoder passwordEncoder;
 
-  private final UserMapper userMapper;
-
   // Register a new user
   public UserResponse register(RegisterRequest request) {
     String email = request.email().trim().toLowerCase(Locale.ROOT);
@@ -42,7 +40,7 @@ public class UserService {
     String passwordHash = passwordEncoder.encode(request.password());
     User user = User.register(email, passwordHash, request.displayName().trim());
 
-    return userMapper.toResponse(userRepository.save(user));
+    return UserResponse.from(userRepository.save(user));
   }
 
   // Login an existing user
@@ -61,12 +59,12 @@ public class UserService {
   public UserResponse getById(UUID id) {
     User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
 
-    return userMapper.toResponse(user);
+    return UserResponse.from(user);
   }
 
   public List<UserResponse> getAll() {
     List<User> users = userRepository.findAll();
 
-    return users.stream().map(userMapper::toResponse).toList();
+    return users.stream().map(UserResponse::from).toList();
   }
 }
