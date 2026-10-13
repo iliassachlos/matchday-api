@@ -11,24 +11,25 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-  private static final String BEARER_SCHEME = "bearerAuth";
+    private static final String BEARER_SCHEME = "bearerAuth";
 
-  @Bean
-  OpenAPI matchdayOpenApi() {
-    return new OpenAPI()
-        .info(
-            new Info()
-                .title("matchday-api · user-service")
-                .version("v1")
-                .description("Registration, login and RS256 JWT issuance"))
-        .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))
-        .components(
-            new Components()
-                .addSecuritySchemes(
-                    BEARER_SCHEME,
-                    new SecurityScheme()
-                        .type(SecurityScheme.Type.HTTP)
-                        .scheme("bearer")
-                        .bearerFormat("JWT")));
-  }
+    // Configure OpenAPI documentation for the user-service
+    @Bean
+    OpenAPI matchdayOpenApi() {
+        return new OpenAPI()
+                .info(
+                        new Info()
+                                .title("matchday-api · user-service")
+                                .version("v1")
+                                .description("Registration, login and RS256 JWT issuance"))
+                .addSecurityItem(new SecurityRequirement().addList(BEARER_SCHEME))
+                .components(
+                        new Components()
+                                .addSecuritySchemes(
+                                        BEARER_SCHEME,
+                                        new SecurityScheme()
+                                                .type(SecurityScheme.Type.HTTP)
+                                                .scheme("bearer")
+                                                .bearerFormat("JWT")));
+    }
 }

@@ -23,11 +23,13 @@ public class SecurityConfig {
 
   public static final String JWT_KEY_ID = "matchday-jwt-key";
 
+  // Password hashing for user credentials
   @Bean
   PasswordEncoder passwordEncoder() {
     return PasswordEncoderFactories.createDelegatingPasswordEncoder();
   }
 
+  // Create encoder to sign JWTs using the private key
   @Bean
   JwtEncoder jwtEncoder(RsaKeyProperties keys) {
     return NimbusJwtEncoder.withKeyPair(keys.publicKey(), keys.privateKey())
@@ -35,11 +37,13 @@ public class SecurityConfig {
         .build();
   }
 
+  // Create decoder to validate JWTs using the public key
   @Bean
   JwtDecoder jwtDecoder(RsaKeyProperties keys) {
     return NimbusJwtDecoder.withPublicKey(keys.publicKey()).build();
   }
 
+  // Create converter to extract authorities from JWTs
   @Bean
   JwtAuthenticationConverter jwtAuthenticationConverter() {
     JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
@@ -54,6 +58,7 @@ public class SecurityConfig {
     return converter;
   }
 
+  // Security filter chain to configure HTTP security
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http.csrf(csrf -> csrf.disable())
