@@ -3,8 +3,10 @@ package com.matchday.ticket;
 import com.matchday.ticket.entity.Event;
 import com.matchday.ticket.entity.Seat;
 import com.matchday.ticket.entity.SeatStatus;
+import com.matchday.ticket.entity.Venue;
 import com.matchday.ticket.repository.EventRepository;
 import com.matchday.ticket.repository.SeatRepository;
+import com.matchday.ticket.repository.VenueRepository;
 import com.matchday.ticket.service.SeatReservationService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,15 +36,21 @@ class SeatReservationConcurrencyTest extends IntegrationTestBase {
     @Autowired
     private EventRepository eventRepository;
 
+    @Autowired
+    private VenueRepository venueRepository;
+
     private UUID seatId;
 
     @BeforeEach
     void setUp() {
         seatRepository.deleteAll();
         eventRepository.deleteAll();
+        venueRepository.deleteAll();
+
+        Venue venue = venueRepository.save(Venue.create("OAKA", "Athens"));
 
         Event event = eventRepository.save(
-                Event.create("Greece vs Netherlands", Instant.parse("2026-10-13T19:00:00Z")));
+                Event.create(venue, "Greece vs Netherlands", Instant.parse("2026-10-13T19:00:00Z")));
 
         Seat seat = seatRepository.save(Seat.create(event, "14", "8", 23, 4500L));
 
