@@ -34,3 +34,8 @@ management:
 
 jwt: 
   public-key: ${JWT_PUBLIC_KEY:classpath:keys/jwt-public.pem}
+
+matchday:
+  hold:
+    duration: ${HOLD_DURATION:10m}
+    release-interval: ${HOLD_RELEASE_INTERVAL:30s}

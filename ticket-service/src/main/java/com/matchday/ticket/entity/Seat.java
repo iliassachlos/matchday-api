@@ -55,6 +55,9 @@ public class Seat {
     @Column(name = "reserved_by")
     private UUID reservedBy;
 
+    @Column(name = "reserved_until")
+    private Instant reservedUntil;
+
     public static Seat create(Event event, String section, String rowLabel, Integer number, long priceCents) {
         Seat seat = new Seat();
 
@@ -74,8 +77,10 @@ public class Seat {
         return this.status == SeatStatus.AVAILABLE;
     }
 
-    public void reserveFor(UUID userId) {
+    public void reserveFor(UUID userId, Instant until) {
         this.status = SeatStatus.RESERVED;
         this.reservedBy = userId;
+        this.reservedUntil = until;
     }
+
 }

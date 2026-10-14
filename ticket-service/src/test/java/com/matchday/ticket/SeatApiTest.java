@@ -27,113 +27,134 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 class SeatApiTest extends IntegrationTestBase {
 
-    private static final UUID MARIA = UUID.randomUUID();
-    private static final UUID GIORGOS = UUID.randomUUID();
+        private static final UUID MARIA = UUID.randomUUID();
+        private static final UUID GIORGOS = UUID.randomUUID();
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private EventRepository eventRepository;
+        @Autowired
+        private EventRepository eventRepository;
 
-    @Autowired
-    private SeatRepository seatRepository;
+        @Autowired
+        private SeatRepository seatRepository;
 
-    @Autowired
-    private VenueRepository venueRepository;
+        @Autowired
+        private VenueRepository venueRepository;
 
-    private UUID eventId;
-    private UUID seatId;
+        private UUID eventId;
+        private UUID seatId;
 
-    @BeforeEach
-    void setUp() {
-        seatRepository.deleteAllInBatch();
-        eventRepository.deleteAllInBatch();
-        venueRepository.deleteAllInBatch();
+        @BeforeEach
+        void setUp() {
+                seatRepository.deleteAllInBatch();
+                eventRepository.deleteAllInBatch();
+                venueRepository.deleteAllInBatch();
 
+                Venue venue = venueRepository.save(Venue.create("OAKA", "Athens"));
 
-        Venue venue = venueRepository.save(Venue.create("OAKA", "Athens"));
+                Event event = eventRepository.save(
+                                Event.create(venue, "Greece vs Netherlands", Instant.parse("2026-10-13T19:00:00Z")));
 
-        Event event = eventRepository.save(
-                Event.create(venue, "Greece vs Netherlands", Instant.parse("2026-10-13T19:00:00Z")));
+                Seat seat = seatRepository.save(Seat.create(event, "14", "8", 23, 4500L));
 
-        Seat seat = seatRepository.save(Seat.create(event, "14", "8", 23, 4500L));
+                eventId = event.getId();
+                seatId = seat.getId();
+        }
 
-        eventId = event.getId();
-        seatId = seat.getId();
-    }
+        /**
+         * Stands in for a validated RS256 token: ticket-service only ever verifies,
+         * never mints.
+         */
+        private RequestPostProcessor as(UUID userId) {
+                return jwt().jwt(builder -> builder.subject(userId.toString()));
+        }
 
-    /** Stands in for a validated RS256 token: ticket-service only ever verifies, never mints. */
-    private RequestPostProcessor as(UUID userId) {
-        return jwt().jwt(builder -> builder.subject(userId.toString()));
-    }
+        @Test
+        @DisplayName("the seat map lists the event's seats with their status")
+        void seatMapIsListed() throws Exception {
+                mockMvc.perform(get("/api/v1/events/{id}/seats", eventId).with(as(MARIA)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(1))
+                                .andExpect(jsonPath("$[0].section").value("14"))
+                                .andExpect(jsonPath("$[0].number").value(23))
+                                .andExpect(jsonPath("$[0].priceCents").value(4500))
+                                .andExpect(jsonPath("$[0].status").value(SeatStatus.AVAILABLE.name()));
+        }
 
-    @Test
-    @DisplayName("the seat map lists the event's seats with their status")
-    void seatMapIsListed() throws Exception {
-        mockMvc.perform(get("/api/v1/events/{id}/seats", eventId).with(as(MARIA)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].section").value("14"))
-                .andExpect(jsonPath("$[0].number").value(23))
-                .andExpect(jsonPath("$[0].priceCents").value(4500))
-                .andExpect(jsonPath("$[0].status").value(SeatStatus.AVAILABLE.name()));
-    }
+        @Test
+        @DisplayName("reserving a free seat succeeds and marks it RESERVED for the caller")
+        void reserveSucceeds() throws Exception {
+                mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
+                                .andExpect(status().is2xxSuccessful());
 
-    @Test
-    @DisplayName("reserving a free seat succeeds and marks it RESERVED for the caller")
-    void reserveSucceeds() throws Exception {
-        mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
-                .andExpect(status().is2xxSuccessful());
+                Seat stored = seatRepository.findById(seatId).orElseThrow();
 
-        Seat stored = seatRepository.findById(seatId).orElseThrow();
+                assertThat(stored.getStatus()).isEqualTo(SeatStatus.RESERVED);
+                assertThat(stored.getReservedBy()).isEqualTo(MARIA);
+        }
 
-        assertThat(stored.getStatus()).isEqualTo(SeatStatus.RESERVED);
-        assertThat(stored.getReservedBy()).isEqualTo(MARIA);
-    }
+        @Test
+        @DisplayName("reserving a taken seat is 409 and does not change the owner")
+        void reserveTakenSeatIsConflict() throws Exception {
+                mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
+                                .andExpect(status().is2xxSuccessful());
 
-    @Test
-    @DisplayName("reserving a taken seat is 409 and does not change the owner")
-    void reserveTakenSeatIsConflict() throws Exception {
-        mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
-                .andExpect(status().is2xxSuccessful());
+                mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(GIORGOS)))
+                                .andExpect(status().isConflict());
 
-        mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(GIORGOS)))
-                .andExpect(status().isConflict());
+                assertThat(seatRepository.findById(seatId).orElseThrow().getReservedBy()).isEqualTo(MARIA);
+        }
 
-        assertThat(seatRepository.findById(seatId).orElseThrow().getReservedBy()).isEqualTo(MARIA);
-    }
+        @Test
+        @DisplayName("reserving a seat that does not exist is 404, not 500")
+        void reserveUnknownSeatIsNotFound() throws Exception {
+                mockMvc.perform(post("/api/v1/seats/{id}/reserve", UUID.randomUUID()).with(as(MARIA)))
+                                .andExpect(status().isNotFound());
+        }
 
-    @Test
-    @DisplayName("reserving a seat that does not exist is 404, not 500")
-    void reserveUnknownSeatIsNotFound() throws Exception {
-        mockMvc.perform(post("/api/v1/seats/{id}/reserve", UUID.randomUUID()).with(as(MARIA)))
-                .andExpect(status().isNotFound());
-    }
+        @Test
+        @DisplayName("reserving without a token is 401")
+        void reserveRequiresAuthentication() throws Exception {
+                mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId))
+                                .andExpect(status().isUnauthorized());
 
-    @Test
-    @DisplayName("reserving without a token is 401")
-    void reserveRequiresAuthentication() throws Exception {
-        mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId))
-                .andExpect(status().isUnauthorized());
+                assertThat(seatRepository.findById(seatId).orElseThrow().getStatus())
+                                .isEqualTo(SeatStatus.AVAILABLE);
+        }
 
-        assertThat(seatRepository.findById(seatId).orElseThrow().getStatus())
-                .isEqualTo(SeatStatus.AVAILABLE);
-    }
+        @Test
+        @DisplayName("Giorgos cannot see Maria's seats: /me is scoped to the token subject")
+        void seatsAreScopedToTheCaller() throws Exception {
+                mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
+                                .andExpect(status().is2xxSuccessful());
 
-    @Test
-    @DisplayName("Giorgos cannot see Maria's seats: /me is scoped to the token subject")
-    void seatsAreScopedToTheCaller() throws Exception {
-        mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
-                .andExpect(status().is2xxSuccessful());
+                mockMvc.perform(get("/api/v1/seats/me").with(as(MARIA)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(1))
+                                .andExpect(jsonPath("$[0].number").value(23));
 
-        mockMvc.perform(get("/api/v1/seats/me").with(as(MARIA)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].number").value(23));
+                mockMvc.perform(get("/api/v1/seats/me").with(as(GIORGOS)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(0));
+        }
 
-        mockMvc.perform(get("/api/v1/seats/me").with(as(GIORGOS)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
-    }
+        @Test
+        @DisplayName("the event list shows the venue and drops to zero available seats when sold out")
+        void eventListShowsVenueAndAvailability() throws Exception {
+                mockMvc.perform(get("/api/v1/events").with(as(MARIA)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.length()").value(1))
+                                .andExpect(jsonPath("$[0].venueName").value("OAKA"))
+                                .andExpect(jsonPath("$[0].city").value("Athens"))
+                                .andExpect(jsonPath("$[0].availableSeats").value(1));
+
+                mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
+                                .andExpect(status().is2xxSuccessful());
+
+                mockMvc.perform(get("/api/v1/events").with(as(GIORGOS)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$[0].availableSeats").value(0));
+        }
+
 }

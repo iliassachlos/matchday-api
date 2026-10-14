@@ -29,9 +29,7 @@ public class SeatController {
     public ResponseEntity<ReservationResponse> reserve(@PathVariable UUID seatId, @AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
 
-        seatReservationService.reserve(seatId, userId);
-
-        return ResponseEntity.ok(new ReservationResponse(seatId, userId, "RESERVED"));
+        return ResponseEntity.ok(seatReservationService.reserve(seatId, userId));
     }
 
     @GetMapping("/me")

@@ -1,11 +1,14 @@
 package com.matchday.ticket.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.matchday.ticket.config.HoldProperties;
+import com.matchday.ticket.dto.ReservationResponse;
 import com.matchday.ticket.dto.SeatResponse;
 import com.matchday.ticket.entity.Seat;
 import com.matchday.ticket.exception.SeatNotAvailableException;
@@ -20,16 +23,21 @@ public class SeatReservationService {
 
     private final SeatRepository seatRepository;
 
-    // Reserve a seat for a user
+    private final HoldProperties holdProperties;
+
+    // Hold a seat for a user until the hold expires
     @Transactional
-    public void reserve(UUID seatId, UUID userId) {
+    public ReservationResponse reserve(UUID seatId, UUID userId) {
         Seat seat = seatRepository.findByIdForUpdate(seatId).orElseThrow(SeatNotFoundException::new);
 
         if (!seat.isAvailable()) {
             throw new SeatNotAvailableException();
         }
 
-        seat.reserveFor(userId);
+        Instant until = Instant.now().plus(holdProperties.duration());
+        seat.reserveFor(userId, until);
+
+        return new ReservationResponse(seatId, userId, seat.getStatus().name(), until);
     }
 
     // List all seats reserved by a user

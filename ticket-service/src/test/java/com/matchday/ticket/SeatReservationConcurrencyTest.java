@@ -4,6 +4,7 @@ import com.matchday.ticket.entity.Event;
 import com.matchday.ticket.entity.Seat;
 import com.matchday.ticket.entity.SeatStatus;
 import com.matchday.ticket.entity.Venue;
+import com.matchday.ticket.exception.SeatNotAvailableException;
 import com.matchday.ticket.repository.EventRepository;
 import com.matchday.ticket.repository.SeatRepository;
 import com.matchday.ticket.repository.VenueRepository;
@@ -43,9 +44,9 @@ class SeatReservationConcurrencyTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        seatRepository.deleteAll();
-        eventRepository.deleteAll();
-        venueRepository.deleteAll();
+        seatRepository.deleteAllInBatch();
+        eventRepository.deleteAllInBatch();
+        venueRepository.deleteAllInBatch();
 
         Venue venue = venueRepository.save(Venue.create("OAKA", "Athens"));
 
@@ -72,8 +73,10 @@ class SeatReservationConcurrencyTest extends IntegrationTestBase {
                         startGate.await();
                         reservationService.reserve(seatId, UUID.randomUUID());
                         reserved.incrementAndGet();
-                    } catch (Exception _) {
+                    } catch (SeatNotAvailableException _) {
                         rejected.incrementAndGet();
+                    } catch (InterruptedException _) {
+                        Thread.currentThread().interrupt();
                     } finally {
                         allDone.countDown();
                     }
