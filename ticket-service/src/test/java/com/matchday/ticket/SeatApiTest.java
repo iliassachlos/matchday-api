@@ -47,9 +47,10 @@ class SeatApiTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        seatRepository.deleteAll();
-        eventRepository.deleteAll();
-        venueRepository.deleteAll();
+        seatRepository.deleteAllInBatch();
+        eventRepository.deleteAllInBatch();
+        venueRepository.deleteAllInBatch();
+
 
         Venue venue = venueRepository.save(Venue.create("OAKA", "Athens"));
 
