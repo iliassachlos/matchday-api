@@ -5,9 +5,14 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+// Extends Spring's handler so framework errors (bad path variables, unknown routes) keep their 4xx status
+@Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(SeatNotFoundException.class)
     ProblemDetail handleSeatNotFound(SeatNotFoundException ex) {
@@ -33,6 +38,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT, "Seat was taken by someone else");
 
         problem.setTitle("Seat not available");
+
+        return problem;
+    }
+
+    @ExceptionHandler(Exception.class)
+    ProblemDetail handleUnexpected(Exception ex) {
+        log.error("Unhandled exception", ex);
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong on our side");
+
+        problem.setTitle("Internal error");
 
         return problem;
     }

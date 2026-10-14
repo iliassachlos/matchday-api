@@ -45,7 +45,7 @@ public interface SeatRepository extends JpaRepository<Seat, UUID> {
         @Modifying
         @Query("""
                         UPDATE Seat s
-                        SET s.status = com.matchday.ticket.entity.SeatStatus.AVAILABLE,
+                        SET s.status = SeatStatus.AVAILABLE,
                             s.reservedBy = null,
                             s.reservedUntil = null,
                             s.version = s.version + 1
