@@ -16,51 +16,51 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(SeatNotFoundException.class)
     ProblemDetail handleSeatNotFound(SeatNotFoundException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
 
-        problem.setTitle("Seat not found");
+        problemDetail.setTitle("Seat not found");
 
-        return problem;
+        return problemDetail;
     }
 
     @ExceptionHandler(SeatNotAvailableException.class)
     ProblemDetail handleSeatNotAvailable(SeatNotAvailableException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
 
-        problem.setTitle("Seat not available");
+        problemDetail.setTitle("Seat not available");
 
-        return problem;
+        return problemDetail;
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     ProblemDetail handleOptimisticLockFailure(ObjectOptimisticLockingFailureException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONFLICT, "Seat was taken by someone else");
 
-        problem.setTitle("Seat not available");
+        problemDetail.setTitle("Seat not available");
 
-        return problem;
+        return problemDetail;
     }
 
     @ExceptionHandler(Exception.class)
     ProblemDetail handleUnexpected(Exception ex) {
         log.error("Unhandled exception", ex);
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong on our side");
 
-        problem.setTitle("Internal error");
+        problemDetail.setTitle("Internal error");
 
-        return problem;
+        return problemDetail;
     }
 
     @ExceptionHandler(SeatNotHeldException.class)
     ProblemDetail handleSeatNotHeld(SeatNotHeldException ex) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
 
-        problem.setTitle("Seat not held");
+        problemDetail.setTitle("Seat not held");
 
-        return problem;
+        return problemDetail;
     }
 
 }

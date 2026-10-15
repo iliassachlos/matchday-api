@@ -10,17 +10,37 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 @Configuration
-public class TicketClientConfig {
+public class HttpClientsConfig {
 
     /**
-     * Creates a RestClient bean for communicating with the ticket service.
+     * Creates a RestClient bean for the ticket service with specified timeouts.
      * 
-     * @param baseUrl - The base URL of the ticket service, injected from
-     *                application properties.
-     * @return RestClient configured with a custom HttpClient and timeouts.
+     * @param baseUrl - the base URL of the ticket service
+     * @return RestClient configured with timeouts
      */
     @Bean
     RestClient ticketRestClient(@Value("${matchday.ticket-service.url}") String baseUrl) {
+        return withTimeouts(baseUrl);
+    }
+
+    /**
+     * Creates a RestClient bean for the user service with specified timeouts.
+     * 
+     * @param baseUrl - the base URL of the user service
+     * @return RestClient configured with timeouts
+     */
+    @Bean
+    RestClient userRestClient(@Value("${matchday.user-service.url}") String baseUrl) {
+        return withTimeouts(baseUrl);
+    }
+
+    /**
+     * Creates a RestClient with specified timeouts for the given base URL.
+     * 
+     * @param baseUrl - the base URL for the RestClient
+     * @return RestClient configured with timeouts
+     */
+    private static RestClient withTimeouts(String baseUrl) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(2))
                 .build();

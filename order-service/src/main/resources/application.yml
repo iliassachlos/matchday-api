@@ -38,3 +38,5 @@ jwt:
 matchday:
   ticket-service:
     url: ${TICKET_SERVICE_URL:http://localhost:8081}
+  user-service:
+    url: ${USER_SERVICE_URL:http://localhost:8080}
