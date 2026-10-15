@@ -11,6 +11,7 @@ import com.matchday.order.dto.OrderResponse;
 import com.matchday.order.dto.PaymentResult;
 import com.matchday.order.dto.SaleOutcome;
 import com.matchday.order.dto.SeatInfo;
+import com.matchday.order.dto.UserInfo;
 import com.matchday.order.entity.Order;
 import com.matchday.order.exception.SeatNotReservedException;
 import com.matchday.order.exception.TicketServiceUnavailableException;
@@ -29,7 +30,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final PaymentService paymentService;
-    private final TicketClientService ticketClient;
+    private final TicketClientService ticketClientService;
+    private final UserClientService userClientService;
 
     /**
      * Place an order for a seat, charging the user and selling the seat in
@@ -42,14 +44,15 @@ public class OrderService {
      * @return Outcome of the order
      */
     public OrderResponse placeOrder(UUID userId, UUID seatId, String paymentMethod, String bearerToken) {
-        SeatInfo seat = ticketClient.getSeat(seatId, bearerToken);
+        UserInfo buyer = userClientService.getCurrentUser(bearerToken);
+        SeatInfo seat = ticketClientService.getSeat(seatId, bearerToken);
 
         // Cheap early exit so nobody is charged for a seat they never reserved.
         if (!"RESERVED".equals(seat.status())) {
             throw new SeatNotReservedException();
         }
 
-        Order order = orderRepository.save(Order.create(userId, seatId, seat.priceCents()));
+        Order order = orderRepository.save(Order.create(userId, buyer.email(), seatId, seat.priceCents()));
         PaymentResult payment = paymentService.charge(order.getId(), order.getAmountCents(), paymentMethod);
 
         if (!payment.approved()) {
@@ -96,7 +99,7 @@ public class OrderService {
 
         for (int attempt = 1;; attempt++) {
             try {
-                return ticketClient.sell(seatId, orderId, bearerToken);
+                return ticketClientService.sell(seatId, orderId, bearerToken);
             } catch (TicketServiceUnavailableException e) {
                 if (attempt == SELL_ATTEMPTS) {
                     log.error("Sale of seat {} for order {} still unconfirmed after {} attempts; refunding",

@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.matchday.order.service.TicketClientService;
+import com.matchday.order.service.UserClientService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -13,5 +14,8 @@ import com.matchday.order.service.TicketClientService;
 public abstract class IntegrationTestBase {
 
     @MockitoBean
-    protected TicketClientService ticketClient;
+    protected TicketClientService ticketClientService;
+
+    @MockitoBean
+    protected UserClientService userClientService;
 }

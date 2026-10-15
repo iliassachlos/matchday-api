@@ -21,7 +21,7 @@ import org.springframework.web.client.RestClient;
 
 import com.matchday.order.dto.UserInfo;
 import com.matchday.order.exception.UserServiceUnavailableException;
-import com.matchday.order.service.UserClient;
+import com.matchday.order.service.UserClientService;
 
 class UserClientTest {
 
@@ -30,13 +30,13 @@ class UserClientTest {
     private static final UUID MARIA = UUID.randomUUID();
 
     private MockRestServiceServer server;
-    private UserClient client;
+    private UserClientService client;
 
     @BeforeEach
     void setUp() {
         RestClient.Builder builder = RestClient.builder().baseUrl(BASE);
         server = MockRestServiceServer.bindTo(builder).build();
-        client = new UserClient(builder.build());
+        client = new UserClientService(builder.build());
     }
 
     @Test

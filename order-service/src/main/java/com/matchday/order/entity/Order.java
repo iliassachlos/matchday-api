@@ -24,6 +24,9 @@ public class Order {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "buyer_email")
+    private String buyerEmail;
+
     @Column(name = "seat_id", nullable = false)
     private UUID seatId;
 
@@ -43,11 +46,12 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public static Order create(UUID userId, UUID seatId, long amountCents) {
+    public static Order create(UUID userId, String buyerEmail, UUID seatId, long amountCents) {
         Order order = new Order();
 
         order.id = UUID.randomUUID();
         order.userId = userId;
+        order.buyerEmail = buyerEmail;
         order.seatId = seatId;
         order.amountCents = amountCents;
         order.status = OrderStatus.PENDING;

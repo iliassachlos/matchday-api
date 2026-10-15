@@ -26,9 +26,11 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import com.matchday.order.dto.SaleOutcome;
 import com.matchday.order.dto.SeatInfo;
+import com.matchday.order.dto.UserInfo;
 import com.matchday.order.entity.Order;
 import com.matchday.order.entity.OrderStatus;
 import com.matchday.order.exception.TicketServiceUnavailableException;
+import com.matchday.order.exception.UserServiceUnavailableException;
 import com.matchday.order.repository.OrderRepository;
 import com.matchday.order.service.PaymentService;
 
@@ -47,7 +49,8 @@ class OrderFlowTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         orderRepository.deleteAllInBatch();
-        when(ticketClient.getSeat(eq(SEAT), any())).thenReturn(new SeatInfo(SEAT, 4500, "RESERVED"));
+        when(ticketClientService.getSeat(eq(SEAT), any())).thenReturn(new SeatInfo(SEAT, 4500, "RESERVED"));
+        when(userClientService.getCurrentUser(any())).thenReturn(new UserInfo(MARIA, "maria@test.gr", "Maria"));
     }
 
     private RequestPostProcessor as(UUID userId) {
@@ -69,7 +72,7 @@ class OrderFlowTest extends IntegrationTestBase {
     @Test
     @DisplayName("charged and sold: the order is PAID at the seat's price")
     void paidWhenChargedAndSold() throws Exception {
-        when(ticketClient.sell(eq(SEAT), any(), any())).thenReturn(SaleOutcome.SOLD);
+        when(ticketClientService.sell(eq(SEAT), any(), any())).thenReturn(SaleOutcome.SOLD);
 
         placeOrderAs(MARIA, PaymentService.CARD_OK)
                 .andExpect(status().isCreated())
@@ -79,6 +82,19 @@ class OrderFlowTest extends IntegrationTestBase {
         Order order = onlyOrder();
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
         assertThat(order.getPaymentReference()).startsWith("fake_ch_");
+        assertThat(order.getBuyerEmail()).isEqualTo("maria@test.gr");
+    }
+
+    @Test
+    @DisplayName("user-service is down: 503, no order, and nobody is charged")
+    void notChargedWhenUserServiceDown() throws Exception {
+        when(userClientService.getCurrentUser(any()))
+                .thenThrow(new UserServiceUnavailableException("connection refused", null));
+
+        placeOrderAs(MARIA, PaymentService.CARD_OK).andExpect(status().isServiceUnavailable());
+
+        assertThat(orderRepository.count()).isZero();
+        verify(ticketClientService, never()).sell(any(), any(), any());
     }
 
     @Test
@@ -88,13 +104,13 @@ class OrderFlowTest extends IntegrationTestBase {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("FAILED"));
 
-        verify(ticketClient, never()).sell(any(), any(), any());
+        verify(ticketClientService, never()).sell(any(), any(), any());
     }
 
     @Test
     @DisplayName("charged but ticket-service says no (hold expired): the money goes back")
     void refundedWhenSaleRejected() throws Exception {
-        when(ticketClient.sell(eq(SEAT), any(), any())).thenReturn(SaleOutcome.REJECTED);
+        when(ticketClientService.sell(eq(SEAT), any(), any())).thenReturn(SaleOutcome.REJECTED);
 
         placeOrderAs(MARIA, PaymentService.CARD_OK)
                 .andExpect(status().isCreated())
@@ -104,7 +120,7 @@ class OrderFlowTest extends IntegrationTestBase {
     @Test
     @DisplayName("a timeout is retried with the same order, and the retry confirms the sale")
     void retriedAfterTimeoutThenPaid() throws Exception {
-        when(ticketClient.sell(eq(SEAT), any(), any()))
+        when(ticketClientService.sell(eq(SEAT), any(), any()))
                 .thenThrow(new TicketServiceUnavailableException("read timed out"))
                 .thenReturn(SaleOutcome.SOLD);
 
@@ -112,25 +128,25 @@ class OrderFlowTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.status").value("PAID"));
 
         UUID orderId = onlyOrder().getId();
-        verify(ticketClient, times(2)).sell(SEAT, orderId, "token");
+        verify(ticketClientService, times(2)).sell(SEAT, orderId, "token");
     }
 
     @Test
     @DisplayName("ticket-service stays down: give up after three attempts and refund")
     void refundedWhenTicketServiceStaysDown() throws Exception {
-        when(ticketClient.sell(eq(SEAT), any(), any()))
+        when(ticketClientService.sell(eq(SEAT), any(), any()))
                 .thenThrow(new TicketServiceUnavailableException("connection refused"));
 
         placeOrderAs(MARIA, PaymentService.CARD_OK)
                 .andExpect(jsonPath("$.status").value("REFUNDED"));
 
-        verify(ticketClient, times(3)).sell(eq(SEAT), any(), any());
+        verify(ticketClientService, times(3)).sell(eq(SEAT), any(), any());
     }
 
     @Test
     @DisplayName("nobody is charged for a seat they have not reserved")
     void notChargedWhenSeatNotReserved() throws Exception {
-        when(ticketClient.getSeat(eq(SEAT), any())).thenReturn(new SeatInfo(SEAT, 4500, "AVAILABLE"));
+        when(ticketClientService.getSeat(eq(SEAT), any())).thenReturn(new SeatInfo(SEAT, 4500, "AVAILABLE"));
 
         placeOrderAs(MARIA, PaymentService.CARD_OK).andExpect(status().isConflict());
 
@@ -140,7 +156,7 @@ class OrderFlowTest extends IntegrationTestBase {
     @Test
     @DisplayName("Giorgos cannot see Maria's orders")
     void ordersAreScopedToTheCaller() throws Exception {
-        when(ticketClient.sell(eq(SEAT), any(), any())).thenReturn(SaleOutcome.SOLD);
+        when(ticketClientService.sell(eq(SEAT), any(), any())).thenReturn(SaleOutcome.SOLD);
         placeOrderAs(MARIA, PaymentService.CARD_OK);
 
         mockMvc.perform(get("/api/v1/orders/me").with(as(MARIA)))
