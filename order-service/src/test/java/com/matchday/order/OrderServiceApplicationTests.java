@@ -1,15 +1,10 @@
 package com.matchday.order;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 
-@Import(TestcontainersConfiguration.class)
-@SpringBootTest
-class OrderServiceApplicationTests {
+class OrderServiceApplicationTests extends IntegrationTestBase {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {
+    }
 }
