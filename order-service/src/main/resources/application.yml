@@ -34,3 +34,7 @@ management:
 
 jwt:
   public-key: ${JWT_PUBLIC_KEY:classpath:keys/jwt-public.pem}
+
+matchday:
+  ticket-service:
+    url: ${TICKET_SERVICE_URL:http://localhost:8081}
