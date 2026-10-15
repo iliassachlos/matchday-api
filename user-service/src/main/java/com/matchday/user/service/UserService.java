@@ -29,7 +29,13 @@ public class UserService {
 
   private final PasswordEncoder passwordEncoder;
 
-  // Register a new user
+  /**
+   * Register a new user
+   * 
+   * @param request - The RegisterRequest containing the user's email, password,
+   *                and display name
+   * @return A UserResponse containing the registered user's information
+   */
   public UserResponse register(RegisterRequest request) {
     String email = request.email().trim().toLowerCase(Locale.ROOT);
 
@@ -43,7 +49,13 @@ public class UserService {
     return UserResponse.from(userRepository.save(user));
   }
 
-  // Login an existing user
+  /**
+   * Login a user and return a JWT token
+   * 
+   * @param request - The LoginRequest containing the user's email and password
+   * @return A TokenResponse containing the JWT token and its expiration time
+   * @throws InvalidCredentialsException if the email or password is invalid
+   */
   public TokenResponse login(LoginRequest request) {
     String email = request.email().trim().toLowerCase(Locale.ROOT);
     User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
@@ -55,13 +67,24 @@ public class UserService {
     return new TokenResponse(tokenService.mintAccessToken(user), "Bearer", tokenService.accessTokenTtlSeconds());
   }
 
-  // Get user by ID
+  /**
+   * Get a user by their ID
+   * 
+   * @param id - The UUID of the user to retrieve
+   * @return A UserResponse containing the user's information
+   * @throws UserNotFoundException if the user with the given ID does not exist
+   */
   public UserResponse getById(UUID id) {
     User user = userRepository.findById(id).orElseThrow(UserNotFoundException::new);
 
     return UserResponse.from(user);
   }
 
+  /**
+   *  Get all users in the system
+   * 
+   * @return - A list of UserResponse objects containing the information of all users
+   */
   public List<UserResponse> getAll() {
     List<User> users = userRepository.findAll();
 

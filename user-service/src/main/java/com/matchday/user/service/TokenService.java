@@ -21,11 +21,21 @@ public class TokenService {
 
     private final JwtEncoder jwtEncoder;
 
+    /**
+     * Get the time-to-live (TTL) of access tokens in seconds.
+     * 
+     * @return
+     */
     public long accessTokenTtlSeconds() {
         return ACCESS_TOKEN_TTL.getSeconds();
     }
 
-    // Mint an access token for the given user
+    /**
+     * Mint a new access token for the given user.
+     * 
+     * @param user - The user for whom to mint the access token
+     * @return A JWT access token as a String
+     */
     public String mintAccessToken(User user) {
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()

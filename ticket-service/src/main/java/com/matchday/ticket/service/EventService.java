@@ -24,7 +24,11 @@ public class EventService {
     private final EventRepository eventRepository;
     private final SeatRepository seatRepository;
 
-    // List all events with their venue and how many seats are still available
+    /**
+     * List all events with the number of available seats for each event.
+     * 
+     * @return
+     */
     @Transactional(readOnly = true)
     public List<EventResponse> listEvents() {
         Map<UUID, Long> availableByEvent = seatRepository.countByEventWithStatus(SeatStatus.AVAILABLE).stream()
@@ -35,7 +39,12 @@ public class EventService {
                 .toList();
     }
 
-    // List all seats for a specific event
+    /**
+     * List all seats for a given event.
+     * 
+     * @param eventId - Event ID
+     * @return The list of seats for the given event
+     */
     @Transactional(readOnly = true)
     public List<SeatResponse> listSeats(UUID eventId) {
         return seatRepository.findSeatMap(eventId).stream()

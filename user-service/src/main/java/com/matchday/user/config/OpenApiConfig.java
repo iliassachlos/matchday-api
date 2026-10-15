@@ -13,7 +13,11 @@ public class OpenApiConfig {
 
     private static final String BEARER_SCHEME = "bearerAuth";
 
-    // Configure OpenAPI documentation for the user-service
+    /**
+     *  Configure OpenAPI for the user-service, including security schemes for JWT authentication.
+     * 
+     * @return
+     */
     @Bean
     OpenAPI matchdayOpenApi() {
         return new OpenAPI()

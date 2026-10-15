@@ -17,13 +17,24 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableConfigurationProperties(JwtKeyProperties.class)
 public class SecurityConfig {
 
-    // Create decoder to validate JWTs using the public key
+    /**
+     * Create a JwtDecoder bean that uses the public key from the application
+     * properties to decode JWTs.
+     * 
+     * @param keys - The JwtKeyProperties bean that contains the public key
+     * @return A JwtDecoder that uses the public key to decode JWTs
+     */
     @Bean
     JwtDecoder jwtDecoder(JwtKeyProperties keys) {
         return NimbusJwtDecoder.withPublicKey(keys.publicKey()).build();
     }
 
-    // Create converter to extract authorities from JWTs
+    /**
+     * Create a JwtAuthenticationConverter bean that converts JWTs into Spring
+     * Security
+     * 
+     * @return A JwtAuthenticationConverter that converts JWTs into Spring Security
+     */
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
@@ -38,7 +49,14 @@ public class SecurityConfig {
         return converter;
     }
 
-    // Security filter chain to configure HTTP security
+    /**
+     * Configure the security filter chain for the application
+     * 
+     * @param http - The HttpSecurity object to configure
+     * @return A SecurityFilterChain that defines the security configuration for the
+     *         application
+     * @throws Exception
+     */
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())

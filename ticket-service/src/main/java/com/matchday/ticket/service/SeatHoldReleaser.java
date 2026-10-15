@@ -17,13 +17,22 @@ public class SeatHoldReleaser {
 
     private final SeatRepository seatRepository;
 
-    // Scheduled task to release expired holds at a fixed interval
+    /**
+     * Release expired holds at a fixed interval defined in the application
+     * properties.
+     */
     @Scheduled(fixedDelayString = "${matchday.hold.release-interval}")
     public void releaseExpiredHolds() {
         releaseExpiredHolds(Instant.now());
     }
 
-    // Release expired holds and log the number of released holds
+    /**
+     * Release expired holds at a specific point in time. This method is useful for
+     * testing purposes.
+     * 
+     * @param now - The point in time to check for expired holds
+     * @return The number of expired holds released
+     */
     public int releaseExpiredHolds(Instant now) {
         int released = seatRepository.releaseExpiredHolds(now);
 

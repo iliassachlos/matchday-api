@@ -23,7 +23,7 @@ public class TicketClientService {
     /**
      * Call ticket-service to get information about a seat
      * 
-     * @param seatId - Seat ID to get information about
+     * @param seatId      - Seat ID to get information about
      * @param bearerToken - Bearer token to authenticate with ticket-service
      * @return SeatInfo - Information about the seat
      */
@@ -43,10 +43,10 @@ public class TicketClientService {
     }
 
     /**
-     *  Call ticket-service to sell a seat
+     * Call ticket-service to sell a seat
      * 
-     * @param seatId - Seat ID to sell
-     * @param orderId - Order ID to associate with the sale
+     * @param seatId      - Seat ID to sell
+     * @param orderId     - Order ID to associate with the sale
      * @param bearerToken - Bearer token to authenticate with ticket-service
      * @return Outcome of the sale
      */

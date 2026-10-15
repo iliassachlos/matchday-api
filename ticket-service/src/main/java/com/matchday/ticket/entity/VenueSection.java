@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class VenueSection {
-    @Id 
+    @Id
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -50,6 +50,12 @@ public class VenueSection {
         return section;
     }
 
+    /**
+     * Calculate the total capacity of the venue section based on the number of rows
+     * and seats per row.
+     * 
+     * @return
+     */
     public int capacity() {
         return rowCount * seatsPerRow;
     }
