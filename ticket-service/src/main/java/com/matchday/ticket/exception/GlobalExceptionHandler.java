@@ -53,4 +53,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         return problem;
     }
+
+    @ExceptionHandler(SeatNotHeldException.class)
+    ProblemDetail handleSeatNotHeld(SeatNotHeldException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+
+        problem.setTitle("Seat not held");
+
+        return problem;
+    }
+
 }

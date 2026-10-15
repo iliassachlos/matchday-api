@@ -13,8 +13,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.matchday.ticket.service.SeatReservationService;
+
+import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
+
 import com.matchday.ticket.dto.ReservationResponse;
+import com.matchday.ticket.dto.SaleResponse;
 import com.matchday.ticket.dto.SeatResponse;
+import com.matchday.ticket.dto.SellRequest;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,4 +43,18 @@ public class SeatController {
         return seatReservationService.listMySeats(UUID.fromString(jwt.getSubject()));
     }
 
+    @GetMapping("/{seatId}")
+    public SeatResponse getSeat(@PathVariable UUID seatId) {
+        return seatReservationService.getSeat(seatId);
+    }
+
+    @PostMapping("/{seatId}/sell")
+    public SaleResponse sell(
+            @PathVariable UUID seatId,
+            @Valid @RequestBody SellRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        return seatReservationService.sell(seatId, userId, request.orderId());
+    }
 }

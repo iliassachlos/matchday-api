@@ -58,6 +58,9 @@ public class Seat {
     @Column(name = "reserved_until")
     private Instant reservedUntil;
 
+    @Column(name = "order_id")
+    private UUID orderId;
+
     public static Seat create(Event event, String section, String rowLabel, Integer number, long priceCents) {
         Seat seat = new Seat();
 
@@ -73,14 +76,65 @@ public class Seat {
         return seat;
     }
 
+    /**
+     * Check if the seat is available for reservation or sale.
+     * 
+     * @return true if the seat is available, false otherwise.
+     */
     public boolean isAvailable() {
         return this.status == SeatStatus.AVAILABLE;
     }
 
+    /**
+     * Reserve the seat for a specific user until a given time.
+     * 
+     * @param userId - the ID of the user reserving the seat
+     * @param until  - the time until which the seat is reserved
+     */
     public void reserveFor(UUID userId, Instant until) {
         this.status = SeatStatus.RESERVED;
         this.reservedBy = userId;
         this.reservedUntil = until;
+    }
+
+    /**
+     * Check if the seat is currently held by a specific user and has not expired.
+     * 
+     * @param userId - the ID of the user to check
+     * @param now    - the current time to compare against the reservation
+     *               expiration
+     * @return true if the seat is held by the user and the hold has not expired,
+     *         false otherwise.
+     */
+    public boolean isHeldBy(UUID userId, Instant now) {
+        return this.status == SeatStatus.RESERVED
+                && userId.equals(this.reservedBy)
+                && this.reservedUntil.isAfter(now);
+    }
+
+    /**
+     * Check if the seat is sold to a specific user and order.
+     * 
+     * @param userId  - the ID of the user to check
+     * @param orderId - the ID of the order to check
+     * @return true if the seat is sold to the user and order, false otherwise.
+     */
+    public boolean isSoldTo(UUID userId, UUID orderId) {
+        return this.status == SeatStatus.SOLD
+                && userId.equals(this.reservedBy)
+                && orderId.equals(this.orderId);
+    }
+
+    /**
+     * Sell the seat to a specific order, marking it as sold and clearing any
+     * reservation.
+     * 
+     * @param orderId - the ID of the order to which the seat is sold
+     */
+    public void sellTo(UUID orderId) {
+        this.status = SeatStatus.SOLD;
+        this.reservedUntil = null;
+        this.orderId = orderId;
     }
 
 }
