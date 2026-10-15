@@ -32,6 +32,7 @@ public class OrderService {
     private final PaymentService paymentService;
     private final TicketClientService ticketClientService;
     private final UserClientService userClientService;
+    private final OrderOutboxService orderOutboxService;
 
     /**
      * Place an order for a seat, charging the user and selling the seat in
@@ -64,8 +65,9 @@ public class OrderService {
         order = orderRepository.save(order);
 
         if (sellSeat(seatId, order.getId(), bearerToken) == SaleOutcome.SOLD) {
-            order.markPaid();
+            return OrderResponse.from(orderOutboxService.markPaidAndAnnounce(order));
         } else {
+
             paymentService.refund(payment.reference(), order.getAmountCents());
             order.markRefunded();
         }

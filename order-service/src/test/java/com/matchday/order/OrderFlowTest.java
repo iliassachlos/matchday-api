@@ -29,9 +29,12 @@ import com.matchday.order.dto.SeatInfo;
 import com.matchday.order.dto.UserInfo;
 import com.matchday.order.entity.Order;
 import com.matchday.order.entity.OrderStatus;
+import com.matchday.order.entity.OutboxMessage;
 import com.matchday.order.exception.TicketServiceUnavailableException;
 import com.matchday.order.exception.UserServiceUnavailableException;
 import com.matchday.order.repository.OrderRepository;
+import com.matchday.order.repository.OutboxRepository;
+import com.matchday.order.service.OrderOutboxService;
 import com.matchday.order.service.PaymentService;
 
 class OrderFlowTest extends IntegrationTestBase {
@@ -46,8 +49,12 @@ class OrderFlowTest extends IntegrationTestBase {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private OutboxRepository outboxRepository;
+
     @BeforeEach
     void setUp() {
+        outboxRepository.deleteAllInBatch();
         orderRepository.deleteAllInBatch();
         when(ticketClientService.getSeat(eq(SEAT), any())).thenReturn(new SeatInfo(SEAT, 4500, "RESERVED"));
         when(userClientService.getCurrentUser(any())).thenReturn(new UserInfo(MARIA, "maria@test.gr", "Maria"));
@@ -83,6 +90,25 @@ class OrderFlowTest extends IntegrationTestBase {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.PAID);
         assertThat(order.getPaymentReference()).startsWith("fake_ch_");
         assertThat(order.getBuyerEmail()).isEqualTo("maria@test.gr");
+
+        assertThat(outboxRepository.count()).isEqualTo(1);
+        OutboxMessage announcement = outboxRepository.findAll().getFirst();
+        assertThat(announcement.getTopic()).isEqualTo(OrderOutboxService.ORDER_PAID_TOPIC);
+        assertThat(announcement.getMessageKey()).isEqualTo(order.getId().toString());
+        assertThat(announcement.getPayload()).contains("maria@test.gr").contains(order.getId().toString());
+        assertThat(announcement.getPublishedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("only paid orders are announced: a declined card or a refund produces no ticket")
+    void onlyPaidOrdersAreAnnounced() throws Exception {
+        placeOrderAs(MARIA, PaymentService.CARD_DECLINED);
+
+        when(ticketClientService.sell(eq(SEAT), any(), any())).thenReturn(SaleOutcome.REJECTED);
+        placeOrderAs(MARIA, PaymentService.CARD_OK);
+
+        assertThat(orderRepository.count()).isEqualTo(2);
+        assertThat(outboxRepository.count()).isZero();
     }
 
     @Test
