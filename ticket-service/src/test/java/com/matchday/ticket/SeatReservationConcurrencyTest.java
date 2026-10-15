@@ -7,6 +7,7 @@ import com.matchday.ticket.entity.Venue;
 import com.matchday.ticket.exception.SeatNotAvailableException;
 import com.matchday.ticket.repository.EventRepository;
 import com.matchday.ticket.repository.SeatRepository;
+import com.matchday.ticket.repository.TicketRepository;
 import com.matchday.ticket.repository.VenueRepository;
 import com.matchday.ticket.service.SeatReservationService;
 
@@ -35,6 +36,9 @@ class SeatReservationConcurrencyTest extends IntegrationTestBase {
     private SeatRepository seatRepository;
 
     @Autowired
+    private TicketRepository ticketRepository;
+
+    @Autowired
     private EventRepository eventRepository;
 
     @Autowired
@@ -44,6 +48,7 @@ class SeatReservationConcurrencyTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
+        ticketRepository.deleteAllInBatch();
         seatRepository.deleteAllInBatch();
         eventRepository.deleteAllInBatch();
         venueRepository.deleteAllInBatch();

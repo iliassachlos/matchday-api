@@ -13,6 +13,7 @@ import com.matchday.ticket.entity.SeatStatus;
 import com.matchday.ticket.entity.Venue;
 import com.matchday.ticket.repository.EventRepository;
 import com.matchday.ticket.repository.SeatRepository;
+import com.matchday.ticket.repository.TicketRepository;
 import com.matchday.ticket.repository.VenueRepository;
 
 import java.time.Instant;
@@ -40,6 +41,9 @@ class SeatApiTest extends IntegrationTestBase {
         private SeatRepository seatRepository;
 
         @Autowired
+        private TicketRepository ticketRepository;
+
+        @Autowired
         private VenueRepository venueRepository;
 
         private UUID eventId;
@@ -47,6 +51,7 @@ class SeatApiTest extends IntegrationTestBase {
 
         @BeforeEach
         void setUp() {
+                ticketRepository.deleteAllInBatch();
                 seatRepository.deleteAllInBatch();
                 eventRepository.deleteAllInBatch();
                 venueRepository.deleteAllInBatch();
