@@ -15,6 +15,11 @@
   <name>ticket-service</name>
   <description>Events, seats and reservations — the concurrency core</description>
 
+  <properties>
+    <zxing.version>3.5.3</zxing.version>
+  </properties>
+
+
   <dependencies>
     <dependency>
       <groupId>com.matchday</groupId>
@@ -62,6 +67,16 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-kafka</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>core</artifactId>
+      <version>${zxing.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.zxing</groupId>
+      <artifactId>javase</artifactId>
+      <version>${zxing.version}</version>
     </dependency>
 
 

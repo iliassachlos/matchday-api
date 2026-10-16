@@ -43,6 +43,9 @@ public class Ticket {
     @Column(name = "used_at")
     private Instant usedAt;
 
+    @Column(name = "emailed_at")
+    private Instant emailedAt;
+
     public static Ticket issue(UUID orderId, UUID seatId, UUID userId, String holderEmail) {
         Ticket ticket = new Ticket();
 
@@ -56,4 +59,13 @@ public class Ticket {
 
         return ticket;
     }
+
+    /**
+     * Marks the ticket as emailed by setting the emailedAt timestamp to the current
+     * time.
+     */
+    public void markEmailed() {
+        this.emailedAt = Instant.now();
+    }
+
 }

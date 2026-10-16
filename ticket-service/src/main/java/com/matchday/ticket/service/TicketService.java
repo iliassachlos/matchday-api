@@ -1,11 +1,13 @@
 package com.matchday.ticket.service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.matchday.ticket.dto.OrderPaidEvent;
+import com.matchday.ticket.dto.TicketDetails;
 import com.matchday.ticket.entity.Seat;
 import com.matchday.ticket.entity.SeatStatus;
 import com.matchday.ticket.entity.Ticket;
@@ -52,4 +54,37 @@ public class TicketService {
         log.info("Issued ticket {} for order {}", ticket.getId(), event.orderId());
         return ticket;
     }
+
+    /**
+     * Returns the details of the ticket with the given ID.
+     * 
+     * @param ticketId - the ID of the ticket
+     * @return the details of the ticket
+     */
+    @Transactional(readOnly = true)
+    public TicketDetails details(UUID ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow();
+        Seat seat = seatRepository.findById(ticket.getSeatId()).orElseThrow(SeatNotFoundException::new);
+
+        return new TicketDetails(
+                ticket.getId(),
+                ticket.getHolderEmail(),
+                seat.getEvent().getName(),
+                seat.getEvent().getVenue().getName(),
+                seat.getEvent().getStartsAt(),
+                seat.getSection(),
+                seat.getRowLabel(),
+                seat.getNumber());
+    }
+
+    /**
+     * Marks the ticket with the given ID as having been emailed to the holder.
+     * 
+     * @param ticketId - the ID of the ticket
+     */
+    @Transactional
+    public void markEmailed(UUID ticketId) {
+        ticketRepository.findById(ticketId).orElseThrow().markEmailed();
+    }
+
 }

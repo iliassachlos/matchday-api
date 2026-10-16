@@ -55,3 +55,5 @@ matchday:
   mail:
     from: ${MAIL_FROM:tickets@matchday.local}
 
+  tickets:
+    signing-secret: ${TICKET_SIGNING_SECRET:local-dev-ticket-signing-secret}

@@ -12,7 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.client.RestClient;
 
 import com.matchday.ticket.dto.OrderPaidEvent;
 import com.matchday.ticket.entity.Event;
@@ -54,6 +56,9 @@ class TicketIssuingTest extends IntegrationTestBase {
     @Autowired
     private VenueRepository venueRepository;
 
+    @Value("${test.mailpit.url}")
+    private String mailpitUrl;
+
     private UUID seatId;
     private UUID orderId;
 
@@ -94,6 +99,23 @@ class TicketIssuingTest extends IntegrationTestBase {
         assertThat(ticket.getStatus()).isEqualTo(TicketStatus.VALID);
         assertThat(ticket.getHolderEmail()).isEqualTo("maria@test.gr");
         assertThat(ticket.getSeatId()).isEqualTo(seatId);
+    }
+
+    @Test
+    @DisplayName("the ticket is emailed with its QR code and then marked as emailed")
+    void ticketIsEmailed() {
+        kafkaTemplate.send(OrderPaidListenerService.ORDER_PAID_TOPIC, orderId.toString(),
+                objectMapper.writeValueAsString(paid(orderId)));
+
+        await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(
+                ticketRepository.findByOrderId(orderId).map(Ticket::getEmailedAt)).isPresent());
+
+        String inbox = RestClient.create(mailpitUrl).get()
+                .uri("/api/v1/messages")
+                .retrieve()
+                .body(String.class);
+
+        assertThat(inbox).contains("Your ticket: Greece vs Netherlands").contains("maria@test.gr");
     }
 
     @Test
