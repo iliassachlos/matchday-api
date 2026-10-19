@@ -24,10 +24,15 @@ management:
     endpoints:
         web:
             exposure:
-                include: health
+                include: health,prometheus
     endpoint:
         health:
             show-details: always
+    # Latency buckets, so Grafana can compute p95 per endpoint
+    metrics:
+        distribution:
+            percentiles-histogram:
+                "[http.server.requests]": true
 
 jwt:
   private-key: ${JWT_PRIVATE_KEY:classpath:keys/jwt-private.pem}

@@ -1,0 +1,15 @@
+# Services run on the host (./mvnw spring-boot:run), so Prometheus reaches them
+# through host.docker.internal rather than a Compose service name.
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: matchday
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels: { service: user-service }
+      - targets: ["host.docker.internal:8081"]
+        labels: { service: ticket-service }
+      - targets: ["host.docker.internal:8082"]
+        labels: { service: order-service }

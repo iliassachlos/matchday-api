@@ -100,7 +100,7 @@ public class SecurityConfig {
                 .permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
                 .permitAll()
-                .requestMatchers("/actuator/health")
+                .requestMatchers("/actuator/health", "/actuator/prometheus")
                 .permitAll()
                 .requestMatchers("/api/v1/admin/**")
                 .hasRole("ADMIN")

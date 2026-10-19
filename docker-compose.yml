@@ -62,5 +62,34 @@ services:
       - "${MAILPIT_UI_PORT:-8025}:8025"
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: matchday-prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    # Lets the container reach services running on the host, on Linux too
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    container_name: matchday-grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      # Local only: open dashboards without a login
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/matchday.json
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   postgres-data:
