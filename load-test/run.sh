@@ -1,13 +1,27 @@
 # Runs a k6 load test against the locally running services.
 # No k6 installation needed — it runs in a throwaway container.
 #
-#   load-test/run.sh              reserve only (SCRIPT=reserve)
-#   SCRIPT=purchase load-test/run.sh   reserve + pay, then check the databases for oversells
+#   bash load-test/run.sh [script] [vus] [iterations]
+#
+#   bash load-test/run.sh                         reserve only, 200 users, 2000 attempts
+#   bash load-test/run.sh purchase                reserve + pay, then check the databases for oversells
+#   bash load-test/run.sh purchase 500 30000      the same with 500 users and 30000 attempts
+#
+# Environment variables (SCRIPT, VUS, ITERATIONS, USER_COUNT, HOT_SEAT) still work too.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-SCRIPT=${SCRIPT:-reserve}
+# Same settings as docker compose, so the database password matches
+if [[ -f .env ]]; then
+  set -a
+  . ./.env
+  set +a
+fi
+
+SCRIPT=${1:-${SCRIPT:-reserve}}
+export VUS=${2:-${VUS:-}}
+export ITERATIONS=${3:-${ITERATIONS:-}}
 PG_USER=${POSTGRES_USER:-matchday}
 
 psql_ticket() { docker compose exec -T postgres psql -U "$PG_USER" -d ticketdb -tAq "$@"; }

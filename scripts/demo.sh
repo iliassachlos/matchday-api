@@ -9,6 +9,8 @@ TICKETS=${TICKET_SERVICE_URL:-http://localhost:8081}
 ORDERS=${ORDER_SERVICE_URL:-http://localhost:8082}
 PG_USER=${POSTGRES_USER:-matchday}
 CROWD_SIZE=${CROWD_SIZE:-1000}
+LOAD_VUS=${LOAD_VUS:-500}
+LOAD_ITERATIONS=${LOAD_ITERATIONS:-30000}
 
 BOLD=$'\e[1m'; GREEN=$'\e[32m'; RED=$'\e[31m'; YELLOW=$'\e[33m'; DIM=$'\e[2m'; RESET=$'\e[0m'
 
@@ -260,6 +262,16 @@ scenario_bad_input() {
     ok "Errors come back as a short, readable message, with no internal details exposed"
 }
 
+scenario_load_test() {
+    note "$LOAD_VUS users make $LOAD_ITERATIONS purchase attempts for 100 seats (k6), then the databases are checked"
+    note "Watch it live in Grafana: http://localhost:3000"
+    if bash load-test/run.sh purchase "$LOAD_VUS" "$LOAD_ITERATIONS"; then
+        ok "Under load: every seat sold at most once, paid exactly once, one ticket each"
+    else
+        fail "The load test or the oversell check failed (output above)"; return 1
+    fi
+}
+
 SCENARIOS=(
     "good_path|Good path: reserve, pay, PAID"
     "two_fans|Two fans click the same seat at the same moment"
@@ -270,6 +282,7 @@ SCENARIOS=(
     "no_token|No token"
     "forged_token|Forged token (someone else's identity)"
     "bad_input|Bad input gets a clean 400"
+    "load_test|Load test: $LOAD_VUS users rush 100 seats, then check for oversells (not in 'all': resets seats and orders)"
 )
 
 # ---------------------------------------------------------------------------------------------
@@ -287,7 +300,12 @@ pick_scenarios() {
     SELECTED=()
     for choice in "${choices[@]}"; do
         if [[ $choice == a || $choice == all ]]; then
-            SELECTED=("${!SCENARIOS[@]}"); return
+            # Everything except the load test, which wipes the seats and orders the others created
+            SELECTED=()
+            for i in "${!SCENARIOS[@]}"; do
+                [[ ${SCENARIOS[$i]%%|*} == load_test ]] || SELECTED+=("$i")
+            done
+            return
         elif [[ $choice =~ ^[0-9]+$ ]] && ((choice >= 1 && choice <= ${#SCENARIOS[@]})); then
             SELECTED+=($((choice - 1)))
         else
