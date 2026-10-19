@@ -32,6 +32,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(TicketNotFoundException.class)
+    ProblemDetail handleTicketNotFound(TicketNotFoundException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+
+        problemDetail.setTitle("Ticket not recognised");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(TicketAlreadyUsedException.class)
+    ProblemDetail handleTicketAlreadyUsed(TicketAlreadyUsedException ex) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+
+        problemDetail.setTitle("Ticket already used");
+        // Lets the steward tell a shared screenshot (minutes ago) from a double scan (seconds ago)
+        problemDetail.setProperty("usedAt", ex.getUsedAt());
+
+        return problemDetail;
+    }
+
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     ProblemDetail handleOptimisticLockFailure(ObjectOptimisticLockingFailureException ex) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(

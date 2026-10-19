@@ -1,5 +1,6 @@
 package com.matchday.ticket.service;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,6 +13,8 @@ import com.matchday.ticket.entity.Seat;
 import com.matchday.ticket.entity.SeatStatus;
 import com.matchday.ticket.entity.Ticket;
 import com.matchday.ticket.exception.SeatNotFoundException;
+import com.matchday.ticket.exception.TicketAlreadyUsedException;
+import com.matchday.ticket.exception.TicketNotFoundException;
 import com.matchday.ticket.repository.SeatRepository;
 import com.matchday.ticket.repository.TicketRepository;
 
@@ -25,6 +28,7 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final SeatRepository seatRepository;
+    private final TicketCodeService ticketCodeService;
 
     /**
      * Issue a ticket for the given order, if it has not already been issued.
@@ -85,6 +89,28 @@ public class TicketService {
     @Transactional
     public void markEmailed(UUID ticketId) {
         ticketRepository.findById(ticketId).orElseThrow().markEmailed();
+    }
+
+    /**
+     * Admit the holder of a scanned QR code, at most once per ticket.
+     *
+     * @param code - the text read from the QR code
+     * @return the ticket's seat details, for the steward to direct the holder
+     * @throws TicketNotFoundException if the code is forged or points to no ticket
+     * @throws TicketAlreadyUsedException if the ticket was already admitted
+     */
+    @Transactional
+    public TicketDetails admit(String code) {
+        UUID ticketId = ticketCodeService.verify(code).orElseThrow(TicketNotFoundException::new);
+
+        if (ticketRepository.markUsed(ticketId, Instant.now()) == 0) {
+            // Safe to read after the update: USED never goes back to VALID, so what we see stays true
+            Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(TicketNotFoundException::new);
+            throw new TicketAlreadyUsedException(ticket.getUsedAt());
+        }
+
+        log.info("Admitted ticket {}", ticketId);
+        return details(ticketId);
     }
 
 }
