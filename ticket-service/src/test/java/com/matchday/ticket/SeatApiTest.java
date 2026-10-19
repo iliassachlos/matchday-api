@@ -112,6 +112,20 @@ class SeatApiTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("retrying a reservation you already hold returns the same hold, not 409 and not extended")
+        void reserveRetryIsIdempotent() throws Exception {
+                String first = mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
+                                .andExpect(status().isOk())
+                                .andReturn().getResponse().getContentAsString();
+
+                String retry = mockMvc.perform(post("/api/v1/seats/{id}/reserve", seatId).with(as(MARIA)))
+                                .andExpect(status().isOk())
+                                .andReturn().getResponse().getContentAsString();
+
+                assertThat(retry).isEqualTo(first);
+        }
+
+        @Test
         @DisplayName("reserving a seat that does not exist is 404, not 500")
         void reserveUnknownSeatIsNotFound() throws Exception {
                 mockMvc.perform(post("/api/v1/seats/{id}/reserve", UUID.randomUUID()).with(as(MARIA)))

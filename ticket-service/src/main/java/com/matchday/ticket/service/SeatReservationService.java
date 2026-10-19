@@ -1,6 +1,7 @@
 package com.matchday.ticket.service;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,11 +40,19 @@ public class SeatReservationService {
     public ReservationResponse reserve(UUID seatId, UUID userId) {
         Seat seat = seatRepository.findByIdForUpdate(seatId).orElseThrow(SeatNotFoundException::new);
 
+        // A retry of a reservation that already succeeded (e.g. the response was lost):
+        // (seat, user) is the idempotency key. Return the same hold, not extended, so
+        // retrying can never keep a seat held forever.
+        if (seat.isHeldBy(userId, Instant.now())) {
+            return new ReservationResponse(seatId, userId, seat.getStatus().name(), seat.getReservedUntil());
+        }
+
         if (!seat.isAvailable()) {
             throw new SeatNotAvailableException();
         }
 
-        Instant until = Instant.now().plus(holdProperties.duration());
+        // Postgres keeps microseconds; truncate so the response matches what is stored
+        Instant until = Instant.now().plus(holdProperties.duration()).truncatedTo(ChronoUnit.MICROS);
         seat.reserveFor(userId, until);
 
         return new ReservationResponse(seatId, userId, seat.getStatus().name(), until);
