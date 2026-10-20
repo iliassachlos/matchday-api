@@ -13,3 +13,5 @@ scrape_configs:
         labels: { service: ticket-service }
       - targets: ["host.docker.internal:8082"]
         labels: { service: order-service }
+      - targets: ["host.docker.internal:8000"]
+        labels: { service: gateway }

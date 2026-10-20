@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 USERS=${USER_SERVICE_URL:-http://localhost:8080}
 TICKETS=${TICKET_SERVICE_URL:-http://localhost:8081}
 ORDERS=${ORDER_SERVICE_URL:-http://localhost:8082}
+GATEWAY=${GATEWAY_URL:-http://localhost:8000}
 PG_USER=${POSTGRES_USER:-matchday}
 CROWD_SIZE=${CROWD_SIZE:-1000}
 LOAD_VUS=${LOAD_VUS:-500}
@@ -272,6 +273,22 @@ scenario_load_test() {
     fi
 }
 
+scenario_gateway() {
+    call GET "$GATEWAY/actuator/health" ""
+    if [[ $STATUS != 200 ]]; then
+        fail "Gateway not running on $GATEWAY: start it with ./mvnw -pl gateway spring-boot:run"; return 1
+    fi
+
+    call GET "$GATEWAY/api/v1/events" "$MARIA"
+    expect 200 "One address for everything: /events reaches ticket-service" || return
+    call GET "$GATEWAY/api/v1/orders/me" "$MARIA"
+    expect 200 "...and /orders reaches order-service" || return
+    call GET "$GATEWAY/api/v1/auth/me" "$MARIA"
+    expect 200 "...and /auth reaches user-service" || return
+    call GET "$GATEWAY/api/v1/orders/me" ""
+    expect 401 "The token is checked by the service behind the gateway: none, 401"
+}
+
 SCENARIOS=(
     "good_path|Good path: reserve, pay, PAID"
     "two_fans|Two fans click the same seat at the same moment"
@@ -283,6 +300,7 @@ SCENARIOS=(
     "forged_token|Forged token (someone else's identity)"
     "bad_input|Bad input gets a clean 400"
     "load_test|Load test: $LOAD_VUS users rush 100 seats, then check for oversells (not in 'all': resets seats and orders)"
+    "gateway|Gateway: one address, each path reaches its service"
 )
 
 # ---------------------------------------------------------------------------------------------
